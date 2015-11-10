@@ -110,6 +110,7 @@ class WebSocketRequestHandler(SimpleHTTPRequestHandler):
         self.logger = getattr(server, "logger", None)
         if self.logger is None:
             self.logger = WebSocketServer.get_logger()
+        self.log_file = getattr(server, "log_file", False)
 
         SimpleHTTPRequestHandler.__init__(self, req, addr, server)
 
@@ -602,7 +603,7 @@ class WebSocketServer(object):
                  listen_port=None, source_is_ipv6=False,
             verbose=False, cert='', key='', ssl_only=None,
             daemon=False, record='', web='',
-            file_only=False,
+            file_only=False, log_file=False, log_file_name='',
             run_once=False, timeout=0, idle_timeout=0, traffic=False,
             tcp_keepalive=True, tcp_keepcnt=None, tcp_keepidle=None,
             tcp_keepintvl=None, auto_pong=False, strict_mode=True):
@@ -627,6 +628,7 @@ class WebSocketServer(object):
         self.handler_id     = 1
 
         self.logger         = self.get_logger()
+        self.log_file       = log_file
         self.tcp_keepalive  = tcp_keepalive
         self.tcp_keepcnt    = tcp_keepcnt
         self.tcp_keepidle   = tcp_keepidle
@@ -744,7 +746,7 @@ class WebSocketServer(object):
         return sock
 
     @staticmethod
-    def daemonize(keepfd=None, chdir='/'):
+    def daemonize(keepfd=[], chdir='/', stdStream=None):
         os.umask(0)
         if chdir:
             os.chdir(chdir)
@@ -767,7 +769,7 @@ class WebSocketServer(object):
         if maxfd == resource.RLIM_INFINITY: maxfd = 256
         for fd in reversed(range(maxfd)):
             try:
-                if fd != keepfd:
+                if (fd not in keepfd ):
                     os.close(fd)
             except OSError:
                 _, exc, _ = sys.exc_info()
@@ -775,8 +777,12 @@ class WebSocketServer(object):
 
         # Redirect I/O to /dev/null
         os.dup2(os.open(os.devnull, os.O_RDWR), sys.stdin.fileno())
-        os.dup2(os.open(os.devnull, os.O_RDWR), sys.stdout.fileno())
-        os.dup2(os.open(os.devnull, os.O_RDWR), sys.stderr.fileno())
+        if stdStream :
++            sys.stdout = stdStream
++            sys.stderr = stdStream
++        else:
+             os.dup2(os.open(os.devnull, os.O_RDWR), sys.stdout.fileno())
+             os.dup2(os.open(os.devnull, os.O_RDWR), sys.stderr.fileno())
 
     def do_handshake(self, sock, address):
         """
@@ -949,7 +955,14 @@ class WebSocketServer(object):
                             tcp_keepintvl=self.tcp_keepintvl)
 
         if self.daemon:
-            self.daemonize(keepfd=lsock.fileno(), chdir=self.web)
+            if self.log_file:
+# Get the stream for the log file so that it can be used for logging in the daemon mode
+                logStream = self.logger.parent.handlers[0].stream
+                files_preserve = [lsock.fileno(), logStream.fileno()]
+                self.daemonize(files_preserve, self.web, logStream)
+            else:
+                files_preserve =  [lsock.fileno()]
+                self.daemonize(files_preserve, self.web)
 
         self.started()  # Some things need to happen after daemonizing
 

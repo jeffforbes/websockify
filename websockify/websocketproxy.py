@@ -333,18 +333,23 @@ def _subprocess_setup():
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 
-def logger_init():
+def logger_init(logFile, logFileName):
     logger = logging.getLogger(WebSocketProxy.log_prefix)
     logger.propagate = False
     logger.setLevel(logging.INFO)
-    h = logging.StreamHandler()
+    if not logFile:
+        h = logging.StreamHandler()
+    else:
+        h = logging.FileHandler(logFileName)
+# Redirect stdout and stderr to the logging facility
+        sys.stderr = h.stream
+        sys.stdout = h.stream
     h.setLevel(logging.DEBUG)
-    h.setFormatter(logging.Formatter("%(message)s"))
+    h.setFormatter(logging.Formatter("%(asctime)-15s %(message)s"))
     logger.addHandler(h)
 
 
 def websockify_init():
-    logger_init()
 
     usage = "\n    %prog [options]"
     usage += " [source_addr:]source_port [target_addr:target_port]"
@@ -411,8 +416,13 @@ def websockify_init():
             help="Automatically respond to ping frames with a pong")
     parser.add_option("--heartbeat", type=int, default=0,
             help="send a ping to the client every HEARTBEAT seconds")
+    parser.add_option("--log-file", dest="log_file", action="store_true",
+                      help="Store logging to a log file", default=False)
+    parser.add_option("--log-file-name", dest="log_file_name", default="/var/log/websockify",
+            help="Absolute path to log file")
 
     (opts, args) = parser.parse_args()
+    logger_init(opts.log_file, opts.log_file_name)
 
     if opts.verbose:
         logging.getLogger(WebSocketProxy.log_prefix).setLevel(logging.DEBUG)
