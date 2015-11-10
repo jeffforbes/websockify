@@ -505,18 +505,18 @@ class WebSocketRequestHandler(SimpleHTTPRequestHandler):
             else:
                 self.stype = "Plain non-SSL (ws://)"
 
-            self.log_message("%s: %s WebSocket connection", client_addr,
+            self.msg("%s: %s WebSocket connection", client_addr,
                              self.stype)
-            self.log_message("%s: Version %s, base64: '%s'", client_addr,
+            self.msg("%s: Version %s, base64: '%s'", client_addr,
                              self.version, self.base64)
             if self.path != '/':
-                self.log_message("%s: Path: '%s'", client_addr, self.path)
+                self.msg("%s: Path: '%s'", client_addr, self.path)
 
             if self.record:
                 # Record raw frame data as JavaScript array
                 fname = "%s.%s" % (self.record,
                                    self.handler_id)
-                self.log_message("opening record file: %s", fname)
+                self.msg("opening record file: %s", fname)
                 self.rec = open(fname, 'w+')
                 encoding = "binary"
                 if self.base64: encoding = "base64"

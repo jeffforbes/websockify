@@ -78,7 +78,7 @@ Traffic Legend:
 
         if self.server.ssl_target:
             msg += " (using SSL)"
-        self.log_message(msg)
+        self.msg(msg)
 
         tsock = websocket.WebSocketServer.socket(self.server.target_host,
                                                  self.server.target_port,
@@ -94,7 +94,7 @@ Traffic Legend:
                 tsock.shutdown(socket.SHUT_RDWR)
                 tsock.close()
                 if self.verbose:
-                    self.log_message("%s:%s: Closed target",
+                    self.msg("%s:%s: Closed target",
                             self.server.target_host, self.server.target_port)
             raise
 
@@ -178,7 +178,7 @@ Traffic Legend:
                 if closed:
                     # TODO: What about blocking on client socket?
                     if self.verbose:
-                        self.log_message("%s:%s: Client closed connection",
+                        self.msg("%s:%s: Client closed connection",
                                 self.server.target_host, self.server.target_port)
                     raise self.CClose(closed['code'], closed['reason'])
 
@@ -200,7 +200,7 @@ Traffic Legend:
                 buf = target.recv(self.buffer_size)
                 if len(buf) == 0:
                     if self.verbose:
-                        self.log_message("%s:%s: Target closed connection",
+                        self.msg("%s:%s: Target closed connection",
                                 self.server.target_host, self.server.target_port)
                     raise self.CClose(1000, "Target closed")
 
