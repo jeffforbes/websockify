@@ -778,9 +778,9 @@ class WebSocketServer(object):
         # Redirect I/O to /dev/null
         os.dup2(os.open(os.devnull, os.O_RDWR), sys.stdin.fileno())
         if stdStream :
-+            sys.stdout = stdStream
-+            sys.stderr = stdStream
-+        else:
+            sys.stdout = stdStream
+            sys.stderr = stdStream
+        else:
              os.dup2(os.open(os.devnull, os.O_RDWR), sys.stdout.fileno())
              os.dup2(os.open(os.devnull, os.O_RDWR), sys.stderr.fileno())
 
